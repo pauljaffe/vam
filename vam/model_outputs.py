@@ -73,8 +73,8 @@ def task_opt_test_step(state: train_state.TrainState, batch):
 class ModelOutputs:
     def __init__(
         self,
-        inputs_dir,
         models_dir,
+        inputs_dir,
         config,
         user_id,
         model_type,

@@ -15,7 +15,6 @@ from vam.config import get_test_config
 # This CLI gets the model outputs for the VAM, task-optimized, and binned RT models
 
 parser = argparse.ArgumentParser()
-parser.add_argument("inputs_dir", help="Directory with model inputs")
 parser.add_argument(
     "models_dir",
     help=(
@@ -26,6 +25,13 @@ parser.add_argument(
 )
 parser.add_argument("-u", "--users", nargs="*", help="Users to process, optional")
 parser.add_argument(
+    "-i",
+    "--inputs_dir",
+    nargs="?",
+    type=str,
+    help="Full path to directory with model inputs, optional",
+)
+parser.add_argument(
     "-d",
     "--derivatives_dir",
     default="derivatives",
@@ -35,8 +41,11 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-inputs_dir = args.inputs_dir
 models_dir = args.models_dir
+inputs_dir = args.inputs_dir
+if inputs_dir is None:
+    inputs_dir = os.path.join(models_dir, "model_inputs")
+
 derivatives_dir = args.derivatives_dir
 metadata = pd.read_csv(os.path.join(models_dir, "metadata.csv"))
 binned_rt_metadata = pd.read_csv(os.path.join(models_dir, "binned_rt_metadata.csv"))
@@ -54,7 +63,7 @@ rand_seed = 1
 
 
 def _get_binned_rt_outputs(
-    inputs_dir, models_dir, epoch, rand_seed, derivatives_dir, user_id, n_rt_bins
+    models_dir, inputs_dir, epoch, rand_seed, derivatives_dir, user_id, n_rt_bins
 ):
     for rt_bin in range(n_rt_bins):
         config = get_test_config(
@@ -62,8 +71,8 @@ def _get_binned_rt_outputs(
         )
 
         outputs = ModelOutputs(
-            inputs_dir,
             models_dir,
+            inputs_dir,
             config,
             user_id,
             "binned_rt",
@@ -85,8 +94,8 @@ for uid in users:
 
         if model_type in ["vam", "task_opt"]:
             outputs = ModelOutputs(
-                inputs_dir,
                 models_dir,
+                inputs_dir,
                 config,
                 uid,
                 model_type,
@@ -99,8 +108,8 @@ for uid in users:
 
         elif model_type == "binned_rt" and uid in binned_rt_users:
             _get_binned_rt_outputs(
-                inputs_dir,
                 models_dir,
+                inputs_dir,
                 binned_rt_epoch,
                 rand_seed,
                 derivatives_dir,
