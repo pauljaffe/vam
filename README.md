@@ -97,13 +97,13 @@ The data directory should contain the image and RT data from one participant, e.
 To generate RTs/choices from the holdout stimuli for all models, activate the training environment described above and run:
 
 ```
-python make_model_inputs.py $MODEL_DIR
+python get_model_outputs.py $MODEL_DIR
 ```
 
 Use the -u flag to generate RTs/choices from a subset of users, e.g.:
 
 ```
-python make_model_inputs.py $MODEL_DIR -u 677 166
+python get_model_outputs.py $MODEL_DIR -u 677 166
 ```
 
 
