@@ -5,5 +5,4 @@ training_env/
 analysis_env/
 preprocessing_env/
 dev_env/
-dev_requirements.txt
 .pre-commit-config.yaml
