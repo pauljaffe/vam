@@ -16,3 +16,4 @@ seaborn==0.12.2
 statsmodels==0.14.1
 tensorstore==0.1.37
 wandb==0.15.5
+pre-commit
