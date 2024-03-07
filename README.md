@@ -8,8 +8,13 @@ Data: [placeholder]
 
 Reproducing the paper
 ------------
+1) Clone the repo (eventually I'll make this a proper pip-installable package):
 
-1) Create/activate a new Python3.10 environment and install the analysis dependencies (I've only tested on Python version 3.10, so that version is strongly encouraged). From the main repo folder:
+```
+git clone https://github.com/pauljaffe/vam
+```
+
+2) Create/activate a new Python3.10 environment and install the analysis dependencies (I've only tested on Python version 3.10, so that version is strongly encouraged). From the main repo folder:
 
 ```
 python3.10 -m venv analysis_env
@@ -17,9 +22,9 @@ source analysis_env/bin/activate
 pip install -r analysis_requirements.txt
 ```
 
-2) Download the trained models, metadata, and derivatives from Zenodo, linked above. These should be placed in one directory with the following subfolders/files: vam_models, task_opt_models, binned_rt_models, derivatives, metadata.csv, and binned_rt_metadata.csv. For convenience, consider setting the overarching directory as an environment variable $MODEL_DIR (referenced below).
+3) Download the trained models, metadata, and derivatives from Zenodo, linked above. These should be placed in one directory with the following subfolders/files: vam_models, task_opt_models, binned_rt_models, derivatives, metadata.csv, and binned_rt_metadata.csv. For convenience, consider setting the overarching directory as an environment variable $MODEL_DIR (referenced below).
 
-3) Run the model/participant analyses using the run_model_analysis.py CLI. From the manuscript folder:
+4) Run the model/participant analyses using the run_model_analysis.py CLI. From the manuscript folder:
 
 ```
 python run_model_analysis.py $MODEL_DIR -s "my_summary_stats"
@@ -27,7 +32,7 @@ python run_model_analysis.py $MODEL_DIR -s "my_summary_stats"
 
 This will run all of the analyses of the model features and model/participant behavior, and save summary analyses in $MODEL_DIR/derivatives/my_summary_stats.
 
-4) Create the manuscript figures using the make_manuscript.py CLI. From the manuscript folder:
+5) Create the manuscript figures using the make_manuscript.py CLI. From the manuscript folder:
 
 ```
 python make_manuscript.py $MODEL_DIR -s "my_summary_stats"
@@ -39,7 +44,7 @@ All of the main/supplemental figures and summary stats .txt files will be saved 
 python make_manuscript.py $MODEL_DIR -s "my_summary_stats" -f 3 S5
 ```
 
-5) The steps above will run the summary analyses on precomputed model outputs (i.e. RTs/choices generated from the holdout set image stimuli). To create the model outputs de novo, follow the steps below.
+Note: The steps above will run the summary analyses on precomputed model outputs (i.e. RTs/choices generated from the holdout set image stimuli). To create the model outputs de novo, follow the steps below.
 
 Training models and creating image stimuli
 ------------
