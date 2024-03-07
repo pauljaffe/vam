@@ -1668,27 +1668,39 @@ class FigureS3(BaseFigure):
         self.layout_pos_summary = stats["layout_pos_summary"].query("stat == 'mean_rt'")
 
     def _figS3_stats(self, df, feature, n_comp, do_bonferonni=True):
-        data = [g["value"].values for _, g in df.groupby("feature_value")]
-        f_stat, p = f_oneway(*data)
-        if do_bonferonni:
-            p = p * n_comp
-        stats = {"stimulus_feature": feature, "f_stat": f"{f_stat:0.3f}", "p": p}
-        stats = pd.DataFrame(stats, index=[0])
-        stats.to_csv(self.stats_file, sep="\t", mode="a")
+        mps = ["Model", "Participant"]
+        for mp in mps:
+            mpdf = df.query("model_user == @mp")
+            data = [g["value"].values for _, g in mpdf.groupby("feature_value")]
+            f_stat, p = f_oneway(*data)
+            n_models = len(mpdf["user_id"].unique())
+            n_ft_vals = len(mpdf["feature_value"].unique())
+            df1 = n_ft_vals - 1
+            df2 = n_models - n_ft_vals
+            if do_bonferonni:
+                p = p * n_comp
 
-        n_models = len(df["user_id"].unique())
-        summary = df.groupby(["feature_value", "model_user"])["value"].describe()
-        summary["s.e.m."] = summary["std"] / np.sqrt(n_models)
-        summary = summary.applymap(lambda x: f"{x:0.3f}")
-        summary.drop(columns=["25%", "75%"], inplace=True)
-
-        with open(self.stats_file, "a") as f:
-            f.write(
-                f"Bin mean stats for {feature}, watch out for change in indentation!:\n"
+            tukey_res = pairwise_tukeyhsd(
+                mpdf["value"].values, mpdf["feature_value"].values
             )
-        summary.to_csv(self.stats_file, sep="\t", mode="a")
-        with open(self.stats_file, "a") as f:
-            f.write("--------------------------------------------------------\n")
+
+            summary = mpdf.groupby(["feature_value"])["value"].describe()
+            summary["s.e.m."] = summary["std"] / np.sqrt(n_models)
+            summary = summary.applymap(lambda x: f"{x:0.3f}")
+            summary.drop(columns=["25%", "75%"], inplace=True)
+
+            with open(self.stats_file, "a") as f:
+                f.write(
+                    (
+                        f"Stats for {mp} mean centered RT vs {feature}:\n"
+                        # f"F({df1},{df2})={f_stat:0.3f}, p={p:0.3f}\n")
+                        f"F({df1},{df2})={f_stat:0.3f}, p={p}\n"
+                    )
+                )
+                print(tukey_res, file=f)
+                f.write(f"Bin mean/s.e.m./etc. for each feature value\n")
+                print(summary, file=f)
+                f.write("--------------------------------------------------------\n")
 
     def make_figure(self):
         fig = plt.figure(
