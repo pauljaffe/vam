@@ -3,6 +3,10 @@ import pickle
 import argparse
 import warnings
 
+# NOTE: sklearn warns that models have not converged; however, increasing
+# the number of training iterations until this warning disappears does
+# not change the results (a better solution would be to change the
+# convergence criteria in the sklearn functions).
 warnings.filterwarnings("ignore")
 
 import pandas as pd
