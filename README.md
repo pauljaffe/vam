@@ -9,7 +9,7 @@ Data: [placeholder]
 Reproducing the paper
 ------------
 
-1) Create/activate a new Python3.10 environment and install the analysis dependencies. From the main repo folder:
+1) Create/activate a new Python3.10 environment and install the analysis dependencies (I've only tested on Python version 3.10, so that version is strongly encouraged). From the main repo folder:
 
 ```
 python3.10 -m venv analysis_env
