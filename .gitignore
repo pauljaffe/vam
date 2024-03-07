@@ -1,0 +1,7 @@
+*.sw[po]
+__pycache__/
+*.py[co]
+training_env/
+analysis_env/
+preprocessing_env/
+.pre-commit-config.yaml
