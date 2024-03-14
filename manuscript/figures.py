@@ -1952,7 +1952,7 @@ class FigureS6(BaseFigure, BasicAnalysisMixin, CorrelationMixin):
     """Suppression vs. congruency effects."""
 
     figsize = (4.5, 3.5)
-    fig_str = "FigureS6_no_labels"
+    fig_str = "FigureS6"
 
     def __init__(
         self,
