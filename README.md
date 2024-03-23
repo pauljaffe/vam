@@ -3,8 +3,9 @@ Visual accumulator model (VAM)
 
 The VAM is a probabilistic model of raw (pixel-space) visual stimuli and response time (RT) data from cognitive tasks. A convolutional neural network (CNN) takes visual stimuli as inputs and outputs the drift rates for an evidence accumulation model (EAM) of speeded decision-making. The CNN and EAM parameters are jointly fitted in a variational Bayesian framework. The VAM allows one to characterize how abstract, task-relevant representations are extracted from raw perceptual inputs and relate these representations to behavior.
 
-Preprint: Jaffe, P. I., Santiago-Reyes, G. X., Schafer, R. J., Bissett, P. G., & Poldrack, R. A. (2024). An image-computable model of speeded decision-making. *arXiv placeholder*.
-Data: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10775514.svg)](https://doi.org/10.5281/zenodo.10775514)
+**Preprint:** Jaffe, P. I., Santiago-Reyes, G. X., Schafer, R. J., Bissett, P. G., & Poldrack, R. A. (2024). An image-computable model of speeded decision-making. *arXiv placeholder*.
+
+**Data:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10775514.svg)](https://doi.org/10.5281/zenodo.10775514)
 
 Reproducing the paper
 ------------
