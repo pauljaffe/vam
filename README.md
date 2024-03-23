@@ -7,6 +7,8 @@ The VAM is a probabilistic model of raw (pixel-space) visual stimuli and respons
 
 **Data:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10775514.svg)](https://doi.org/10.5281/zenodo.10775514)
 
+**DOI for this repo:** [![DOI](https://zenodo.org/badge/766245281.svg)](https://zenodo.org/doi/10.5281/zenodo.10864120)
+
 Reproducing the paper
 ------------
 1) Clone the repo (eventually I'll make this a proper pip-installable package):
