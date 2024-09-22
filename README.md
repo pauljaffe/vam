@@ -13,7 +13,7 @@ The VAM is a probabilistic model of raw (pixel-space) visual stimuli and respons
 
 Reproducing the paper
 ------------
-1) Clone the repo (eventually I'll make this a proper pip-installable package):
+1) Clone the repo:
 
 ```
 git clone https://github.com/pauljaffe/vam
