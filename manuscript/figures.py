@@ -1050,6 +1050,7 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
         super().__init__(
             stats, derivatives_dir, metadata, config, seed, n_boot, summary_dir
         )
+        pdb.set_trace()
         self.decoding_df = stats["decoding"].query("model_type in ['vam', 'task_opt']")
         self.decoding_df = self.decoding_df.rename(
             columns={
@@ -1799,7 +1800,7 @@ class FigureS3(BaseFigure):
 
 class FigureS4(BaseFigure, DeltaPlotCAFMixin):
     # CAF/Delta plot analysis
-    figsize = (7, 4.5)
+    figsize = (7, 2)
     fig_str = "FigureS4"
 
     def __init__(
@@ -1830,19 +1831,15 @@ class FigureS4(BaseFigure, DeltaPlotCAFMixin):
         fig = plt.figure(
             constrained_layout=False, figsize=self.figsize, dpi=self.figdpi
         )
-        gs = fig.add_gridspec(15, 15)
-        A_ax = fig.add_subplot(gs[:6, 1:7])
-        B_ax = fig.add_subplot(gs[:6, 9:15])
-        C_ax = fig.add_subplot(gs[9:, 1:7])
-        D_ax = fig.add_subplot(gs[9:, 9:15])
+        gs = fig.add_gridspec(6, 15)
+        A_ax = fig.add_subplot(gs[:, 1:7])
+        B_ax = fig.add_subplot(gs[:, 9:15])
 
-        for ax, title in zip([A_ax, B_ax, C_ax, D_ax], ["A", "B", "C", "D"]):
+        for ax, title in zip([A_ax, B_ax], ["A", "B"]):
             self.add_title_ax(fig, ax, title, pad=3, ax_offset=1)
 
         self._plot_delta(A_ax, self.delta_df.query("model_type == 'vam'"))
         self._plot_caf(B_ax, self.caf_df.query("model_type == 'vam'"))
-        self._plot_delta(C_ax, self.delta_df.query("model_type == 'binned_rt'"))
-        self._plot_caf(D_ax, self.caf_df.query("model_type == 'binned_rt'"))
 
         self.save_figure()
 
