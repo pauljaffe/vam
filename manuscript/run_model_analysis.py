@@ -22,8 +22,7 @@ parser.add_argument(
     "models_dir",
     help=(
         "Directory with models (checkpoints/splits). This should contain "
-        "metadata.csv and three subdirectories: "
-        "vam_models, task_opt_models, and binned_rt_models"
+        "metadata.csv and two subdirectories: vam_models and task_opt_models"
     ),
 )
 parser.add_argument("-u", "--users", nargs="*", help="Users to process, optional")
@@ -49,9 +48,7 @@ models_dir = args.models_dir
 derivatives_dir = args.derivatives_dir
 summary_dir = args.summary_dir
 metadata = pd.read_csv(os.path.join(models_dir, "metadata.csv"))
-binned_rt_metadata = pd.read_csv(os.path.join(models_dir, "binned_rt_metadata.csv"))
 
-binned_rt_users = binned_rt_metadata["user_id"].values
 users = args.users
 if users is None:
     users = metadata["user_id"].values
@@ -70,6 +67,5 @@ for uid in users:
         rand_seed,
         derivatives_dir=derivatives_dir,
         summary_dir=summary_dir,
-        has_binned_rt_model=uid in binned_rt_users,
     )
     analyzer.run_analysis()

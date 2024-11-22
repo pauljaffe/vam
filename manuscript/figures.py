@@ -15,6 +15,7 @@ from vam.mixins import (
     DeltaPlotCAFMixin,
     SingleUnitMixin,
 )
+from vam.lba import dynamic_lba_sim
 
 
 class BaseFigure(BasicAnalysisMixin):
@@ -2215,3 +2216,108 @@ class FigureS8(BaseFigure, BasicAnalysisMixin):
         self.save_figure()
 
         return fig
+
+
+class FigureS9(BaseFigure, BasicAnalysisMixin):
+    """Time-varying orthogonalization simulation"""
+
+    figsize = (7, 1.5)
+    fig_str = "FigureS9"
+
+    def __init__(
+        self,
+        stats,
+        derivatives_dir,
+        metadata,
+        config,
+        seed=None,
+        n_boot=None,
+        summary_dir=None,
+    ):
+        super().__init__(
+            stats, derivatives_dir, metadata, config, seed, n_boot, summary_dir
+        )
+        self.delta_df = stats["delta_plot"]
+        self.caf_df = stats["caf"]
+
+        entity_map = {"model": "Model", "user": "Participant"}
+        congruency_map = {"congruent": "Congruent", "incongruent": "Incongruent"}
+
+        for df in [self.delta_df, self.caf_df]:
+            df["model_user"] = df["model_user"].replace(entity_map)
+
+        self.caf_df["congruency"] = self.caf_df["congruency"].replace(congruency_map)
+
+        lba_df = (
+            stats["lba_params"]
+            .query("model_type == 'vam'")
+            .merge(metadata, on=["user_id"], how="left")
+        )
+
+        # Simulation params
+        v_targ_con = lba_df.query("congruency == 0 and stat == 'target_drift'")[
+            "value"
+        ].mean()
+        v_targ_incon = lba_df.query("congruency == 1 and stat == 'target_drift'")[
+            "value"
+        ].mean()
+        v_flnk_incon = lba_df.query("congruency == 1 and stat == 'flanker_drift'")[
+            "value"
+        ].mean()
+        v_other_con = lba_df.query("congruency == 0 and stat == 'other_drift'")[
+            "value"
+        ].mean()
+        self.sim_params = {
+            "t0": lba_df["t0"].mean(),
+            "a": lba_df["a"].mean(),
+            "b": lba_df["b"].mean(),
+            "v_targ_con": v_targ_con,
+            "v_targ_incon": v_targ_incon,
+            "v_flnk_incon": v_flnk_incon,
+            "v_other_con": v_other_con,
+            "tau": 0.5,  # time constant of orthogonalization dynamics
+            "max_align": 0.2,  # Maximum target/flanker subspace overlap
+            "seed": seed,
+            "n_trials": 10,
+        }
+
+    def make_figure(self):
+        fig = plt.figure(
+            constrained_layout=False, figsize=self.figsize, dpi=self.figdpi
+        )
+        gs = fig.add_gridspec(6, 15)
+        A_ax = fig.add_subplot(gs[:, 1:7])
+        B_ax = fig.add_subplot(gs[:, 9:15])
+
+        for ax, title in zip([A_ax, B_ax], ["A", "B"]):
+            self.add_title_ax(fig, ax, title, pad=3, ax_offset=1)
+
+        self._plot_delta(A_ax, self.delta_df.query("model_type == 'vam'"))
+        self._plot_caf(B_ax, self.caf_df.query("model_type == 'vam'"))
+
+        self.save_figure()
+
+        return fig
+
+    def _plot_caf(self, ax, plot_df):
+        model_con_df = plot_df.query(
+            "model_user == 'Model' and congruency == 'Congruent'"
+        )
+        model_incon_df = plot_df.query(
+            "model_user == 'Model' and congruency == 'Incongruent'"
+        )
+        user_con_df = plot_df.query(
+            "model_user == 'Participant' and congruency == 'Congruent'"
+        )
+        user_incon_df = plot_df.query(
+            "model_user == 'Participant' and congruency == 'Incongruent'"
+        )
+        for df in [model_con_df, model_incon_df, user_con_df, user_incon_df]:
+            df["across_user_rt"] = df.groupby("decile_idx")["rt"].transform("mean")
+        plot_df = pd.concat([model_con_df, model_incon_df, user_con_df, user_incon_df])
+        ax = self.plot_caf(plot_df, "across_user_rt", ax=ax)
+        handles, labels = ax.get_legend_handles_labels()
+        handles = [handles[i] for i in [1, 2, 4, 5]]
+        labels = [labels[i] for i in [1, 2, 4, 5]]
+        ax.legend(handles, labels, loc="lower right", ncol=2)
+        ax.get_legend().get_frame().set_alpha(0)

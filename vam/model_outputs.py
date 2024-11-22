@@ -67,7 +67,7 @@ def task_opt_test_step(state: train_state.TrainState, batch):
     choices = logits.argmax(axis=-1)
     features = mod_vars["intermediates"]["features"]
 
-    return state, {"response_dirs": choices}, features
+    return state, {"response_dirs": choices}, np.array(logits), features
 
 
 class ModelOutputs:
@@ -197,6 +197,7 @@ class ModelOutputs:
         batch_idx = 0
         sim_data = []
         drifts = []
+        logits = []
         for batch in test_gen:
             if self.model_type in ["vam", "binned_rt"]:
                 (
@@ -218,11 +219,13 @@ class ModelOutputs:
                 (
                     trainer.state,
                     batch_sim_data,  # just the choices of the classifier
+                    batch_logits,
                     batch_features,
                 ) = task_opt_test_step(
                     trainer.state,
                     batch,
                 )
+                logits.append(batch_logits)
 
             for layer in range(self.n_layers):
                 fts = batch_features[layer]
@@ -251,7 +254,11 @@ class ModelOutputs:
                 "drifts": drifts,
             }
         elif self.model_type == "task_opt":
-            model_outputs = {"sim_data": sim_data}
+            logits = np.concatenate(logits, axis=0)
+            model_outputs = {
+                "sim_data": sim_data,
+                "logits": logits,
+            }
 
         return model_outputs
 
@@ -334,7 +341,7 @@ class ModelOutputs:
         model_rts = model_outputs["sim_data"]["rts"][mask]
         model_responses = model_outputs["sim_data"]["response_dirs"][mask]
         drifts = model_outputs["drifts"][mask]
-        target_drifts, flanker_drifts, other_drifts = self._process_drifts(
+        target_drifts, flanker_drifts, other_drifts = self._process_drifts_logits(
             drifts,
             user_data["targ_dirs"].values[mask],
             user_data["dis_dirs"].values[mask],
@@ -356,18 +363,28 @@ class ModelOutputs:
     def process_task_opt_behavior(self, user_data, model_outputs):
         # Concatenate user, model data (in that order)
         model_responses = model_outputs["sim_data"]["response_dirs"]
+        logits = model_outputs["logits"]
+        target_logits, flanker_logits, other_logits = self._process_drifts_logits(
+            logits,
+            user_data["targ_dirs"],
+            user_data["dis_dirs"],
+            self.config.model.n_acc,
+        )
 
         model_data = user_data.copy(deep=True)
         model_data["model_user"] = "model"
         model_data["response_dirs"] = model_responses
         model_data["rts"] = np.nan
+        model_data["target_logits"] = target_logits
+        model_data["flanker_logits"] = flanker_logits
+        model_data["other_logits"] = other_logits
 
         user_data["model_user"] = "user"
         df = pd.concat((user_data, model_data)).reset_index(drop=True)
         df.to_csv(self.behavior_path, index=False)
 
-    def _process_drifts(self, drifts, targets, flankers, n_acc):
-        # Get mean drift for targets, flankers, and non-target/non-flanker (other)
+    def _process_drifts_logits(self, drifts, targets, flankers, n_acc):
+        # Get mean drift rate/logits for targets, flankers, and non-target/non-flanker (other)
         # Congruent trials: other drift rates calculated as the average
         # of two non-target/non-flanker drift rates
         # Incongruent trials: other drift rates calculated as the average

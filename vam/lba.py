@@ -8,6 +8,7 @@ from jax import lax
 from jax import random
 import distrax
 import numpy as np
+from scipy.stats import ortho_group
 
 
 def jittable_sim_lba(A_key, v_key, v, t0, b, A, K, s=1):

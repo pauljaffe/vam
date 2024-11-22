@@ -230,49 +230,46 @@ class BasicAnalysisMixin:
 class LBAParamsMixin:
     """
     Functions for extracting the LBA params from the VAM and calculating
-    the drift rates.
+    the drift rates. Also calculates stats for the output logits of
+    the task-optimized models.
     """
 
     def lba_param_analysis(self):
         lba_dfs = []
-        with open(os.path.join(self.vam_dir, "lba_params.pkl"), "rb") as f:
-            vam_lba_params = pickle.load(f)
-        vam_lba_df = self._lba_param_stats(self.vam_df, vam_lba_params, "vam")
-        lba_dfs.append(vam_lba_df)
-
-        if self.has_binned_rt_model:
-            for rt_bin in range(self.n_rt_bins):
-                rt_bin_dir = os.path.join(
-                    self.binned_rt_dir, f"user{self.user_id}_rt_bin{rt_bin}"
-                )
-                bin_trial_df = pd.read_csv(os.path.join(rt_bin_dir, "trial_df.csv"))
-
-                with open(os.path.join(rt_bin_dir, "lba_params.pkl"), "rb") as f:
-                    bin_lba_params = pickle.load(f)
-
-                bin_lba_df = self._lba_param_stats(
-                    bin_trial_df, bin_lba_params, "binned_rt", rt_bin=rt_bin
-                )
-                lba_dfs.append(bin_lba_df)
+        for mtype, trial_df in zip(
+            ["vam", "task_opt"],
+            [self.vam_df, self.task_opt_df],
+        ):
+            if mtype == "vam":
+                with open(os.path.join(self.vam_dir, "lba_params.pkl"), "rb") as f:
+                    vam_lba_params = pickle.load(f)
+                lba_df = self._lba_param_stats(trial_df, vam_lba_params, mtype)
+            elif mtype == "task_opt":
+                lba_df = self._drift_logit_stats(trial_df, mtype)
+            lba_dfs.append(lba_df)
 
         return pd.concat(lba_dfs)
 
-    def _lba_param_stats(self, trial_df, lba_params, model_type, rt_bin=None):
-        # Get drift rates for congruent/incongruent trials
+    def _drift_logit_stats(self, trial_df, model_type, rt_bin=None):
+        if model_type == "vam":
+            label = "drifts"
+        elif model_type == "task_opt":
+            label = "logits"
+
         model_df = trial_df.query("model_user == 'model'")
-        all_dfs = []
+        stat_dfs = []
         for con in [0, 1]:
             con_df = model_df.query("congruency == @con")
-            targ_drift = con_df["target_drifts"].mean()
-            flnk_drift = con_df["flanker_drifts"].mean()
-            other_drift = con_df["other_drifts"].mean()
+            targ_drift = con_df[f"target_{label}"].mean()
+            flnk_drift = con_df[f"flanker_{label}"].mean()
+            other_drift = con_df[f"other_{label}"].mean()
 
             this_df = pd.DataFrame(
                 {
                     "stat": [
-                        f"target_drift",
-                        f"flanker_drift",
-                        f"other_drift",
+                        f"target_{label[:-1]}",
+                        f"flanker_{label[:-1]}",
+                        f"other_{label[:-1]}",
                     ],
                     "congruency": 3 * [con],
                     "value": [targ_drift, flnk_drift, other_drift],
@@ -281,7 +278,14 @@ class LBAParamsMixin:
                     "rt_bin": 3 * [rt_bin],
                 }
             )
-            all_dfs.append(this_df)
+            stat_dfs.append(this_df)
+        return pd.concat(stat_dfs).reset_index(drop=True)
+
+    def _lba_param_stats(self, trial_df, lba_params, model_type, rt_bin=None):
+        # Get drift rates for congruent/incongruent trials
+        model_df = trial_df.query("model_user == 'model'")
+        all_dfs = []
+        all_dfs.append(self._drift_logit_stats(trial_df, model_type, rt_bin=rt_bin))
 
         # Other LBA params
         response_caution = lba_params["b"][0] - lba_params["a"][0]
