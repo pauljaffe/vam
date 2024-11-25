@@ -253,10 +253,13 @@ class LBAParamsMixin:
     def _drift_logit_stats(self, trial_df, model_type, rt_bin=None):
         if model_type == "vam":
             label = "drifts"
+            model_df = trial_df.query("model_user == 'model'")
         elif model_type == "task_opt":
             label = "logits"
+            # Since logits are used as a proxy for RT congruency effects,
+            # only correct trials are used
+            model_df = trial_df.query("model_user == 'model' and correct == 1")
 
-        model_df = trial_df.query("model_user == 'model'")
         stat_dfs = []
         for con in [0, 1]:
             con_df = model_df.query("congruency == @con")
@@ -279,6 +282,7 @@ class LBAParamsMixin:
                 }
             )
             stat_dfs.append(this_df)
+
         return pd.concat(stat_dfs).reset_index(drop=True)
 
     def _lba_param_stats(self, trial_df, lba_params, model_type, rt_bin=None):

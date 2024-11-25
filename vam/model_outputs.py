@@ -12,6 +12,7 @@ from flax.training import train_state
 import numpy as np
 import pandas as pd
 import h5py
+from scipy.special import softmax
 
 from .training import Trainer
 from .utils import get_vam_lba_params
@@ -369,6 +370,7 @@ class ModelOutputs:
             user_data["targ_dirs"],
             user_data["dis_dirs"],
             self.config.model.n_acc,
+            do_softmax=True,
         )
 
         model_data = user_data.copy(deep=True)
@@ -383,12 +385,16 @@ class ModelOutputs:
         df = pd.concat((user_data, model_data)).reset_index(drop=True)
         df.to_csv(self.behavior_path, index=False)
 
-    def _process_drifts_logits(self, drifts, targets, flankers, n_acc):
+    def _process_drifts_logits(
+        self, drifts, targets, flankers, n_acc, do_softmax=False
+    ):
         # Get mean drift rate/logits for targets, flankers, and non-target/non-flanker (other)
         # Congruent trials: other drift rates calculated as the average
         # of two non-target/non-flanker drift rates
         # Incongruent trials: other drift rates calculated as the average
         # of the three non-target drift rates
+        if do_softmax:
+            drifts = softmax(drifts, axis=1)
         con_idx = np.where(targets == flankers)[0]
         incon_idx = np.where(targets != flankers)[0]
         target_drifts = drifts[np.arange(len(targets)), targets]

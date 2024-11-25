@@ -1151,7 +1151,7 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
         ce_ax.set_xlim([-1, 2])
         self.rotate_ax_labels(ce_ax)
 
-        self._logit_panel(logit_ax)
+        self._confidence_panel(logit_ax)
 
         self._lineplot_panel(
             self.orthog_df,
@@ -1218,8 +1218,7 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
 
         return fig
 
-    def _logit_panel(self, ax):
-        # Panel F: Drift rate summary
+    def _confidence_panel(self, ax):
         df = self.lba_params_df.query("stat in ['target_logit']")
         df = df.replace(
             {
@@ -1229,40 +1228,55 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
             }
         )
 
-        F = sns.barplot(
-            data=df,
-            x="congruency",
-            y="value",
-            palette="viridis",
-            ax=ax,
-        )
-        ax.set_ylabel("Target logit (a.u.)")
-        ax.set_xlabel("")
-        self.rotate_ax_labels(ax)
-        ax.set_xlim([-1, 2])
-
-        self._logit_panel_stats(df)
-
-    def _logit_panel_stats(self, df):
-        with open(self.stats_file, "a") as f:
-            f.write(
-                (
-                    "Signed-rank test for difference in target logit on"
-                    "congruent vs. incongruent trials (task-optimized models):\n"
-                )
-            )
         con_df = df.query("stat == 'Target' and congruency == 'Congruent'").sort_values(
             by=["user_id"]
         )
         incon_df = df.query(
             "stat == 'Target' and congruency == 'Incongruent'"
         ).sort_values(by=["user_id"])
-        con_logits = con_df["value"].values
-        incon_logits = incon_df["value"].values
+        con_logits = con_df["value"]
+        incon_logits = incon_df["value"]
 
-        wstat, p = wilcoxon(con_logits, incon_logits)
+        bins = np.arange(-1e-3, 8e-3, 1e-3)
+        sns.histplot(con_logits.values - incon_logits.values, bins=bins, ax=ax)
+        ax.set_xlabel("Difference in confidence\n(congruent - incongruent)")
+        ax.set_title("Task-opt. models", fontsize=6, pad=3)
+
+        #        F = sns.barplot(
+        #            data=df,
+        #            x="congruency",
+        #            y="value",
+        #            palette="viridis",
+        #            ax=ax,
+        #        )
+        #        ax.set_ylabel("Target logit (a.u.)")
+        #        ax.set_xlabel("")
+        #        self.rotate_ax_labels(ax)
+        #        ax.set_xlim([-1, 2])
+
+        self._confidence_panel_stats(con_logits, incon_logits)
+
+    def _confidence_panel_stats(self, con_logits, incon_logits):
+        wstat, p = wilcoxon(con_logits.values, incon_logits.values)
+        conf_diff = con_logits.values - incon_logits.values
+        diff_mean = np.mean(conf_diff)
+        diff_sem = np.std(conf_diff) / np.sqrt(len(conf_diff))
+
         with open(self.stats_file, "a") as f:
+            f.write(
+                (
+                    "Signed-rank test for difference in target confidence on "
+                    "congruent vs. incongruent trials (task-optimized models):\n"
+                )
+            )
             f.write(f"w = {wstat:.3f}, p = {p:.3f}\n")
+            f.write(
+                (
+                    "Mean +/- s.e.m. difference in target confidence, "
+                    "congruent - incongruent trials: "
+                    f"{diff_mean} +/- {diff_sem}\n"
+                )
+            )
 
     def _unit_panel(self, df, axes, layers):
         for ax, layer in zip(axes, layers):
