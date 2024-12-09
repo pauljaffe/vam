@@ -205,14 +205,19 @@ class Figure2(BaseFigure, CorrelationMixin, BasicAnalysisMixin):
         )
 
         # Rename some values for plotting
-        entity_map = {"model": "Model", "user": "Participant"}
+        ex_entity_map = {"model": "Example model", "user": "Example participant"}
         for df in [
-            self.basic_df,
             self.rt_example_df,
             self.layout_example_df,
             self.position_example_df,
         ]:
-            df["model_user"] = df["model_user"].replace(entity_map)
+            df["model_user"] = df["model_user"].replace(ex_entity_map)
+
+        group_entity_map = {"model": "Model", "user": "Participant"}
+        for df in [
+            self.basic_df,
+        ]:
+            df["model_user"] = df["model_user"].replace(group_entity_map)
 
         congruency_map = {0: "Congruent", 1: "Incongruent"}
         self.lba_params_df["congruency"] = self.lba_params_df["congruency"].replace(
@@ -267,7 +272,7 @@ class Figure2(BaseFigure, CorrelationMixin, BasicAnalysisMixin):
         axes[0].set_xlabel("RT (s)")
         axes[0].set_xlim([0.35, 1.1])
         sns.move_legend(
-            axes[0], "upper left", bbox_to_anchor=(0, 1.4), frameon=False, title=None
+            axes[0], "upper left", bbox_to_anchor=(-0.1, 1.4), frameon=False, title=None
         )
 
         # Model vs. participant behavior scatterplots
@@ -412,7 +417,7 @@ class Figure2(BaseFigure, CorrelationMixin, BasicAnalysisMixin):
         ax.set_xlabel("Layout")
         ax.set_ylabel("Mean RT (s)")
         sns.move_legend(
-            ax, "upper left", bbox_to_anchor=(0, 1.4), frameon=False, title=None
+            ax, "upper left", bbox_to_anchor=(-0.1, 1.4), frameon=False, title=None
         )
 
         mean_rts = self.layout_example_df.groupby(["layouts"])["rts"].mean()
@@ -442,7 +447,7 @@ class Figure2(BaseFigure, CorrelationMixin, BasicAnalysisMixin):
         ax.set_ylabel("Mean RT (s)")
         self.rotate_ax_labels(ax)
         sns.move_legend(
-            ax, "upper left", bbox_to_anchor=(0, 1.4), frameon=False, title=None
+            ax, "upper left", bbox_to_anchor=(-0.1, 1.4), frameon=False, title=None
         )
 
         mean_rts = self.position_example_df.groupby(["xpos_bin"])["rts"].mean()
@@ -1122,21 +1127,24 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
         fig = plt.figure(
             constrained_layout=False, figsize=self.figsize, dpi=self.figdpi
         )
-        gs = fig.add_gridspec(12, 46)
+        gs = fig.add_gridspec(12, 43)
 
         ce_ax = fig.add_subplot(gs[:4, 3:7])
-        logit_ax = fig.add_subplot(gs[:4, 12:16])
-        orthog_ax = fig.add_subplot(gs[:4, 21:31])
-        dim_ax = fig.add_subplot(gs[:4, 36:46])
+        orthog_ax = fig.add_subplot(gs[:4, 12:22])
+        dim_ax = fig.add_subplot(gs[:4, 27:37])
         mi_ax = fig.add_subplot(gs[8:, 3:13])
-        decoding_ax = fig.add_subplot(gs[8:, 19:29])
-        unit_ax1 = fig.add_subplot(gs[8:, 35:39])
-        unit_ax2 = fig.add_subplot(gs[8:, 42:46])
+        decoding_ax = fig.add_subplot(gs[8:, 18:28])
+        unit_ax1 = fig.add_subplot(gs[8:, 33:37])
+        unit_ax2 = fig.add_subplot(gs[8:, 39:43])
+
+        # Analysis of task-optimized model confidence (no associated figure)
+        self._confidence_analysis()
 
         for ax, title in zip(
-            [ce_ax, logit_ax, orthog_ax, dim_ax, mi_ax, decoding_ax, unit_ax1],
-            ["A", "B", "C", "D", "E", "F", "G"],
+            [ce_ax, orthog_ax, dim_ax, mi_ax, decoding_ax, unit_ax1],
+            ["A", "B", "C", "D", "E", "F"],
         ):
+
             self.add_title_ax(fig, ax, title, pad=6, ax_offset=3)
 
         sns.barplot(
@@ -1150,8 +1158,6 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
         ce_ax.set_ylabel("Accuracy\ncongruency effect")
         ce_ax.set_xlim([-1, 2])
         self.rotate_ax_labels(ce_ax)
-
-        self._confidence_panel(logit_ax)
 
         self._lineplot_panel(
             self.orthog_df,
@@ -1218,7 +1224,7 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
 
         return fig
 
-    def _confidence_panel(self, ax):
+    def _confidence_analysis(self):
         df = self.lba_params_df.query("stat in ['target_logit']")
         df = df.replace(
             {
@@ -1237,30 +1243,15 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
         con_logits = con_df["value"]
         incon_logits = incon_df["value"]
 
-        bins = np.arange(-1e-3, 8e-3, 1e-3)
-        sns.histplot(con_logits.values - incon_logits.values, bins=bins, ax=ax)
-        ax.set_xlabel("Difference in confidence\n(congruent - incongruent)")
-        ax.set_title("Task-opt. models", fontsize=6, pad=3)
+        self._confidence_stats(con_logits, incon_logits)
 
-        #        F = sns.barplot(
-        #            data=df,
-        #            x="congruency",
-        #            y="value",
-        #            palette="viridis",
-        #            ax=ax,
-        #        )
-        #        ax.set_ylabel("Target logit (a.u.)")
-        #        ax.set_xlabel("")
-        #        self.rotate_ax_labels(ax)
-        #        ax.set_xlim([-1, 2])
-
-        self._confidence_panel_stats(con_logits, incon_logits)
-
-    def _confidence_panel_stats(self, con_logits, incon_logits):
+    def _confidence_stats(self, con_logits, incon_logits):
         wstat, p = wilcoxon(con_logits.values, incon_logits.values)
         conf_diff = con_logits.values - incon_logits.values
         diff_mean = np.mean(conf_diff)
         diff_sem = np.std(conf_diff) / np.sqrt(len(conf_diff))
+        # Cohen's D for paired samples
+        cohensd = diff_mean / np.std(conf_diff)
 
         with open(self.stats_file, "a") as f:
             f.write(
@@ -1275,6 +1266,12 @@ class Figure6(BaseFigure, BasicAnalysisMixin):
                     "Mean +/- s.e.m. difference in target confidence, "
                     "congruent - incongruent trials: "
                     f"{diff_mean} +/- {diff_sem}\n"
+                )
+            )
+            f.write(
+                (
+                    "Cohen's d for difference in target confidence, "
+                    f"congruent - incongruent trials: {cohensd:.3f}\n"
                 )
             )
 
