@@ -5,7 +5,7 @@ The VAM is a probabilistic model of raw (pixel-space) visual stimuli and respons
 
 **Publication (revisions in progress):** Jaffe, P. I., Gustavo, X. S. R., Schafer, R. J., Bissett, P. G., Poldrack, R. A. An image-computable model of speeded decision-making. *eLife* **13**, RP98351 (2024).
 
-**Data:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10775514.svg)](https://doi.org/10.5281/zenodo.10775514)
+**Data:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10775513.svg)]([https://doi.org/](https://zenodo.org/doi/)10.5281/zenodo.10775513)
 
 **DOI for this repo:** [![DOI](https://zenodo.org/badge/766245281.svg)](https://zenodo.org/doi/10.5281/zenodo.10864120)
 
